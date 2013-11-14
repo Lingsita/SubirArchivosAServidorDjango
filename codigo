@@ -1,0 +1,53 @@
+def LlenaFormulario(request):
+    formulario=""
+    if request.method=='POST':
+
+
+        codigo=request.POST['codigo_documento']
+        f= Formulario.objects.get(nombre=request.POST['form']);
+        c=Documento.objects.filter(codigo_documento=codigo)
+        formulario=request.POST['form']
+        if c:
+            return render_to_response('superadmin/ver_Form.html',
+                                  { 'Formulario':  f.descripcion, 'nombre': f.nombre, 'existente': 'ya existe este documento'},
+                                  context_instance=RequestContext(request))
+        else:
+          
+            campos=Campo.objects.filter(formulario=f)
+            for c in campos:
+                if c.tipo.nombre!='file':
+                    d=Documento(codigo_documento=codigo,campo=c, formulario=f, contenido=request.POST[c.nombre])
+                    d.save()
+    else:
+        return mostrarPagina(request, 'superadmin/administrar_formularios.html', {})
+            #return HttpResponseRedirect(reverse('muestra_documentos'))
+
+    if request.FILES:
+        print('llego file')
+        f= Formulario.objects.get(nombre=formulario);
+        c=Documento.objects.filter(codigo_documento=codigo)
+        if formulario!="":
+
+            if c:
+                return render_to_response('superadmin/ver_Form.html',
+                                      { 'Formulario':  f.descripcion, 'nombre': f.nombre, 'existente': 'ya existe este documento'},
+                                      context_instance=RequestContext(request))
+            else:
+                for c in campos:
+                    if c.tipo.nombre=='file':
+                        request.FILES[c.nombre].name=codigo+'-'+request.FILES[c.nombre].name
+                        save_file(request.FILES[c.nombre])
+
+
+        return HttpResponseRedirect(reverse('muestra_documentos'))
+
+def save_file(file, path=''):
+    ''' Little helper to save a file
+    '''
+    path="/archivo/file._get_name()"
+    filename = file._get_name()
+    print(file._get_name())
+    fd = open('%s/%s' % (settings.MEDIA_ROOT, str(path) + str(filename)), 'wb')
+    for chunk in file.chunks():
+        fd.write(chunk)
+    fd.close()
